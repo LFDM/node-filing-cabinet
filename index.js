@@ -222,7 +222,7 @@ function tsLookup({dependency, filename, tsConfig, noTypeDefinitions, tsCompiler
     compilerOptions.module = ts.ModuleKind.AMD;
   }
 
-  const host = (ts = ts || require('ts')).createCompilerHost({});
+  const host = (ts = ts || require('typescript')).createCompilerHost({});
   debug('with options: ', compilerOptions);
 
   const namedModule = ts.resolveModuleName(dependency, filename, compilerOptions, host);
