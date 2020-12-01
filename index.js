@@ -45,6 +45,7 @@ const defaultLookups = {
  * @param {String} [options.webpackConfig] Path to the webpack config
  * @param {Object} [options.ast] A preparsed AST for the file identified by filename.
  * @param {Object} [options.tsConfig] Path to a typescript config file
+ * @param {Object} [options.tsCompilerOptions] Pre-parsed compiler options. Use instead of tsConfig for speedier resuls
  * @param {boolean} [options.noTypeDefinitions] Whether to return '.d.ts' files or '.js' files for a dependency
  */
 module.exports = function cabinet(options) {
@@ -211,17 +212,17 @@ function jsLookup({dependency, filename, directory, config, webpackConfig, confi
   }
 }
 
-function tsLookup({dependency, filename, tsConfig, noTypeDefinitions}) {
+function tsLookup({dependency, filename, tsConfig, noTypeDefinitions, tsCompilerOptions}) {
   debug('performing a typescript lookup');
 
-  let compilerOptions = getCompilerOptionsFromTsConfig(tsConfig);
+  let compilerOptions = tsCompilerOptions || getCompilerOptionsFromTsConfig(tsConfig);
 
   // Preserve for backcompat. Consider removing this as a breaking change.
   if (!compilerOptions.module) {
     compilerOptions.module = ts.ModuleKind.AMD;
   }
 
-  const host = ts.createCompilerHost({});
+  const host = (ts = ts || require('ts')).createCompilerHost({});
   debug('with options: ', compilerOptions);
 
   const namedModule = ts.resolveModuleName(dependency, filename, compilerOptions, host);
@@ -245,7 +246,7 @@ function tsLookup({dependency, filename, tsConfig, noTypeDefinitions}) {
   return result ? path.resolve(result) : '';
 }
 
-function commonJSLookup({dependency, filename, directory, nodeModulesConfig, tsConfig}) {
+function commonJSLookup({dependency, filename, directory, nodeModulesConfig, tsConfig, tsCompilerOptions}) {
   if (!resolve) {
     resolve = require('resolve');
   }
@@ -276,7 +277,7 @@ function commonJSLookup({dependency, filename, directory, nodeModulesConfig, tsC
     return packageJson;
   }
 
-  const tsCompilerOptions = getCompilerOptionsFromTsConfig(tsConfig);
+  const tsCompilerOptions = tsCompilerOptions || getCompilerOptionsFromTsConfig(tsConfig);
   const allowMIxedJsAndTs = tsCompilerOptions.allowJs;
   let extensions = ['.js', '.jsx'];
   if (allowMIxedJsAndTs) {
