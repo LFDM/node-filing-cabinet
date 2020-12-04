@@ -1,7 +1,7 @@
-'use strict';
+"use strict";
 
-const path = require('path');
-const debug = require('debug')('cabinet');
+const path = require("path");
+const debug = require("debug")("cabinet");
 
 /*
  * most js resolver are lazy-loaded (only required when needed)
@@ -13,25 +13,25 @@ let getModuleType;
 let resolve;
 
 let amdLookup;
-const stylusLookup = require('stylus-lookup');
-const sassLookup = require('sass-lookup');
+const stylusLookup = require("stylus-lookup");
+const sassLookup = require("sass-lookup");
 let ts;
 
 let resolveDependencyPath;
-const appModulePath = require('app-module-path');
+const appModulePath = require("app-module-path");
 let webpackResolve;
-const isRelative = require('is-relative-path');
+const isRelative = require("is-relative-path");
 
 const defaultLookups = {
-  '.js': jsLookup,
-  '.jsx': jsLookup,
-  '.ts': tsLookup,
-  '.tsx': tsLookup,
-  '.scss': sassLookup,
-  '.sass': sassLookup,
-  '.styl': stylusLookup,
+  ".js": jsLookup,
+  ".jsx": jsLookup,
+  ".ts": tsLookup,
+  ".tsx": tsLookup,
+  ".scss": sassLookup,
+  ".sass": sassLookup,
+  ".styl": stylusLookup,
   // Less and Sass imports are very similar
-  '.less': sassLookup
+  ".less": sassLookup,
 };
 
 /**
@@ -49,22 +49,19 @@ const defaultLookups = {
  * @param {boolean} [options.noTypeDefinitions] Whether to return '.d.ts' files or '.js' files for a dependency
  */
 module.exports = function cabinet(options) {
-  const {
-    partial,
-    filename,
-  } = options;
+  const { partial, filename } = options;
 
-  debug('Given filename: ' + filename);
+  debug("Given filename: " + filename);
 
   const ext = path.extname(filename);
-  debug('which has the extension: ' + ext);
+  debug("which has the extension: " + ext);
 
   let resolver = defaultLookups[ext];
 
   if (!resolver) {
-    debug('using generic resolver');
+    debug("using generic resolver");
     if (!resolveDependencyPath) {
-      resolveDependencyPath = require('resolve-dependency-path');
+      resolveDependencyPath = require("resolve-dependency-path");
     }
 
     resolver = resolveDependencyPath;
@@ -87,7 +84,7 @@ module.exports.supportedFileExtensions = Object.keys(defaultLookups);
  * @param  {String} extension - The file extension that should use the resolver
  * @param  {Function} lookupStrategy - A resolver of partial paths
  */
-module.exports.register = function(extension, lookupStrategy) {
+module.exports.register = function (extension, lookupStrategy) {
   defaultLookups[extension] = lookupStrategy;
 
   if (!this.supportedFileExtensions.includes(extension)) {
@@ -105,57 +102,62 @@ module.exports.register = function(extension, lookupStrategy) {
  * @param  {Object} options.ast
  * @return {String}
  */
-module.exports._getJSType = function(options = {}) {
+module.exports._getJSType = function (options = {}) {
   if (!getModuleType) {
-    getModuleType = require('module-definition');
+    getModuleType = require("module-definition");
   }
 
   if (options.config) {
-    return 'amd';
+    return "amd";
   }
 
   if (options.webpackConfig) {
-    return 'webpack';
+    return "webpack";
   }
 
   if (options.ast) {
-    debug('reusing the given ast');
+    debug("reusing the given ast");
     return getModuleType.fromSource(options.ast);
   }
 
-  debug('using the filename to find the module type');
+  debug("using the filename to find the module type");
   return getModuleType.sync(options.filename);
 };
 
 function getCompilerOptionsFromTsConfig(tsConfig) {
   if (!ts) {
-    ts = require('typescript');
+    ts = require("typescript");
   }
 
   let compilerOptions = {};
 
-  debug('given typescript config: ', tsConfig);
+  debug("given typescript config: ", tsConfig);
 
   if (!tsConfig) {
-    debug('no tsconfig given, defaulting');
-
-  } else if (typeof tsConfig === 'string') {
-    debug('string tsconfig given, parsing');
+    debug("no tsconfig given, defaulting");
+  } else if (typeof tsConfig === "string") {
+    debug("string tsconfig given, parsing");
 
     try {
       const tsParsedConfig = ts.readJsonConfigFile(tsConfig, ts.sys.readFile);
-      compilerOptions = ts.parseJsonSourceFileConfigFileContent(tsParsedConfig, ts.sys, path.dirname(tsConfig)).options;
-      debug('successfully parsed tsconfig');
+      compilerOptions = ts.parseJsonSourceFileConfigFileContent(
+        tsParsedConfig,
+        ts.sys,
+        path.dirname(tsConfig)
+      ).options;
+      debug("successfully parsed tsconfig");
     } catch (e) {
-      debug('could not parse tsconfig');
-      throw new Error('could not read tsconfig');
+      debug("could not parse tsconfig");
+      throw new Error("could not read tsconfig");
     }
   } else {
-    compilerOptions = ts.convertCompilerOptionsFromJson(tsConfig.compilerOptions).options;
+    compilerOptions = ts.convertCompilerOptionsFromJson(
+      tsConfig.compilerOptions
+    ).options;
   }
 
-  debug('processed typescript config: ', tsConfig);
-  debug('processed typescript config type: ', typeof tsConfig);
+  debug("processed typescript config: ", tsConfig);
+  debug("processed typescript config type: ", typeof tsConfig);
 
   return compilerOptions;
 }
@@ -173,19 +175,29 @@ function getCompilerOptionsFromTsConfig(tsConfig) {
  * @param  {Object} [options.ast]
  * @return {String}
  */
-function jsLookup({dependency, filename, directory, config, webpackConfig, configPath, nodeModulesConfig, ast, tsConfig}) {
+function jsLookup({
+  dependency,
+  filename,
+  directory,
+  config,
+  webpackConfig,
+  configPath,
+  nodeModulesConfig,
+  ast,
+  tsConfig,
+}) {
   const type = module.exports._getJSType({
     config: config,
     webpackConfig: webpackConfig,
     filename: filename,
-    ast: ast
+    ast: ast,
   });
 
   switch (type) {
-    case 'amd':
-      debug('using amd resolver');
+    case "amd":
+      debug("using amd resolver");
       if (!amdLookup) {
-        amdLookup = require('module-lookup-amd');
+        amdLookup = require("module-lookup-amd");
       }
 
       return amdLookup({
@@ -194,115 +206,163 @@ function jsLookup({dependency, filename, directory, config, webpackConfig, confi
         configPath: configPath,
         partial: dependency,
         directory: directory,
-        filename: filename
+        filename: filename,
       });
 
-    case 'commonjs':
-      debug('using commonjs resolver');
-      return commonJSLookup({dependency, filename, directory, nodeModulesConfig, tsConfig});
+    case "commonjs":
+      debug("using commonjs resolver");
+      return commonJSLookup({
+        dependency,
+        filename,
+        directory,
+        nodeModulesConfig,
+        tsConfig,
+      });
 
-    case 'webpack':
-      debug('using webpack resolver for es6');
-      return resolveWebpackPath({dependency, filename, directory, webpackConfig});
+    case "webpack":
+      debug("using webpack resolver for es6");
+      return resolveWebpackPath({
+        dependency,
+        filename,
+        directory,
+        webpackConfig,
+      });
 
-    case 'es6':
+    case "es6":
     default:
-      debug('using commonjs resolver for es6');
-      return commonJSLookup({dependency, filename, directory, nodeModulesConfig, tsConfig});
+      debug("using commonjs resolver for es6");
+      return commonJSLookup({
+        dependency,
+        filename,
+        directory,
+        nodeModulesConfig,
+        tsConfig,
+      });
   }
 }
 
-function tsLookup({dependency, filename, tsConfig, noTypeDefinitions, tsCompilerOptions}) {
-  debug('performing a typescript lookup');
+function tsLookup({
+  dependency,
+  filename,
+  tsConfig,
+  noTypeDefinitions,
+  tsCompilerOptions,
+}) {
+  debug("performing a typescript lookup");
 
-  let compilerOptions = tsCompilerOptions || getCompilerOptionsFromTsConfig(tsConfig);
+  let compilerOptions =
+    tsCompilerOptions || getCompilerOptionsFromTsConfig(tsConfig);
 
   // Preserve for backcompat. Consider removing this as a breaking change.
   if (!compilerOptions.module) {
     compilerOptions.module = ts.ModuleKind.AMD;
   }
 
-  const host = (ts = ts || require('typescript')).createCompilerHost({});
-  debug('with options: ', compilerOptions);
+  const host = (ts = ts || require("typescript")).createCompilerHost({});
+  debug("with options: ", compilerOptions);
 
-  const namedModule = ts.resolveModuleName(dependency, filename, compilerOptions, host);
-  let result = '';
+  const namedModule = ts.resolveModuleName(
+    dependency,
+    filename,
+    compilerOptions,
+    host
+  );
+  let result = "";
 
   if (namedModule.resolvedModule) {
     result = namedModule.resolvedModule.resolvedFileName;
-    if (namedModule.resolvedModule.extension === '.d.ts' && noTypeDefinitions) {
-      result = ts.resolveJSModule(dependency, path.dirname(filename), host) || result;
+    if (namedModule.resolvedModule.extension === ".d.ts" && noTypeDefinitions) {
+      result =
+        ts.resolveJSModule(dependency, path.dirname(filename), host) || result;
     }
   } else {
-    const suffix = '.d.ts';
+    const suffix = ".d.ts";
     const lookUpLocations = namedModule.failedLookupLocations
       .filter((string) => string.endsWith(suffix))
       .map((string) => string.substr(0, string.length - suffix.length));
 
-    result = lookUpLocations.find(ts.sys.fileExists) || '';
+    result = lookUpLocations.find(ts.sys.fileExists) || "";
   }
 
-  debug('result: ' + result);
-  return result ? path.resolve(result) : '';
+  debug("result: " + result);
+  return result ? path.resolve(result) : "";
 }
 
-function commonJSLookup({dependency, filename, directory, nodeModulesConfig, tsConfig, tsCompilerOptions}) {
+function commonJSLookup({
+  dependency,
+  filename,
+  directory,
+  nodeModulesConfig,
+  tsConfig,
+  tsCompilerOptions,
+}) {
   if (!resolve) {
-    resolve = require('resolve');
+    resolve = require("resolve");
   }
 
   if (!dependency) {
-    debug('blank dependency given. Returning early.');
-    return '';
+    debug("blank dependency given. Returning early.");
+    return "";
   }
 
   // Need to resolve partials within the directory of the module, not filing-cabinet
-  const moduleLookupDir = path.join(directory, 'node_modules');
+  const moduleLookupDir = path.join(directory, "node_modules");
 
-  debug('adding ' + moduleLookupDir + ' to the require resolution paths');
+  debug("adding " + moduleLookupDir + " to the require resolution paths");
 
   appModulePath.addPath(moduleLookupDir);
 
   // Make sure the partial is being resolved to the filename's context
   // 3rd party modules will not be relative
-  if (dependency[0] === '.') {
+  if (dependency[0] === ".") {
     dependency = path.resolve(path.dirname(filename), dependency);
   }
 
-  let result = '';
+  let result = "";
 
   // Allows us to configure what is used as the "main" entry point
   function packageFilter(packageJson) {
-    packageJson.main = packageJson[nodeModulesConfig.entry] ? packageJson[nodeModulesConfig.entry] : packageJson.main;
+    packageJson.main = packageJson[nodeModulesConfig.entry]
+      ? packageJson[nodeModulesConfig.entry]
+      : packageJson.main;
     return packageJson;
   }
 
-  const tsCompilerOptions = tsCompilerOptions || getCompilerOptionsFromTsConfig(tsConfig);
-  const allowMIxedJsAndTs = tsCompilerOptions.allowJs;
-  let extensions = ['.js', '.jsx'];
+  const compilerOptions =
+    tsCompilerOptions || getCompilerOptionsFromTsConfig(tsConfig);
+  const allowMIxedJsAndTs = compilerOptions.allowJs;
+  let extensions = [".js", ".jsx"];
   if (allowMIxedJsAndTs) {
-    extensions = extensions.concat(['.ts', '.tsx']);
+    extensions = extensions.concat([".ts", ".tsx"]);
   }
 
   try {
     result = resolve.sync(dependency, {
       extensions,
       basedir: directory,
-      packageFilter: nodeModulesConfig && nodeModulesConfig.entry ? packageFilter : undefined,
+      packageFilter:
+        nodeModulesConfig && nodeModulesConfig.entry
+          ? packageFilter
+          : undefined,
       // Add fileDir to resolve index.js files in that dir
-      moduleDirectory: ['node_modules', directory]
+      moduleDirectory: ["node_modules", directory],
     });
-    debug('resolved path: ' + result);
+    debug("resolved path: " + result);
   } catch (e) {
-    debug('could not resolve ' + dependency);
+    debug("could not resolve " + dependency);
   }
 
   return result;
 }
 
-function resolveWebpackPath({dependency, filename, directory, webpackConfig}) {
+function resolveWebpackPath({
+  dependency,
+  filename,
+  directory,
+  webpackConfig,
+}) {
   if (!webpackResolve) {
-    webpackResolve = require('enhanced-resolve');
+    webpackResolve = require("enhanced-resolve");
   }
   webpackConfig = path.resolve(webpackConfig);
   let loadedConfig;
@@ -310,19 +370,22 @@ function resolveWebpackPath({dependency, filename, directory, webpackConfig}) {
   try {
     loadedConfig = require(webpackConfig);
 
-    if (typeof loadedConfig === 'function') {
+    if (typeof loadedConfig === "function") {
       loadedConfig = loadedConfig();
     }
   } catch (e) {
-    debug('error loading the webpack config at ' + webpackConfig);
+    debug("error loading the webpack config at " + webpackConfig);
     debug(e.message);
     debug(e.stack);
-    return '';
+    return "";
   }
 
   const resolveConfig = Object.assign({}, loadedConfig.resolve);
 
-  if (!resolveConfig.modules && (resolveConfig.root || resolveConfig.modulesDirectories)) {
+  if (
+    !resolveConfig.modules &&
+    (resolveConfig.root || resolveConfig.modulesDirectories)
+  ) {
     resolveConfig.modules = [];
 
     if (resolveConfig.root) {
@@ -330,7 +393,9 @@ function resolveWebpackPath({dependency, filename, directory, webpackConfig}) {
     }
 
     if (resolveConfig.modulesDirectories) {
-      resolveConfig.modules = resolveConfig.modules.concat(resolveConfig.modulesDirectories);
+      resolveConfig.modules = resolveConfig.modules.concat(
+        resolveConfig.modulesDirectories
+      );
     }
   }
 
@@ -341,21 +406,25 @@ function resolveWebpackPath({dependency, filename, directory, webpackConfig}) {
     // we only wnat the path of the resolved file
     dependency = stripLoader(dependency);
 
-    const lookupPath = isRelative(dependency) ? path.dirname(filename) : directory;
+    const lookupPath = isRelative(dependency)
+      ? path.dirname(filename)
+      : directory;
 
     return resolver(lookupPath, dependency);
   } catch (e) {
-    debug('error when resolving ' + dependency);
+    debug("error when resolving " + dependency);
     debug(e.message);
     debug(e.stack);
-    return '';
+    return "";
   }
 }
 
 function stripLoader(dependency) {
-  const exclamationLocation = dependency.indexOf('!');
+  const exclamationLocation = dependency.indexOf("!");
 
-  if (exclamationLocation === -1) { return dependency; }
+  if (exclamationLocation === -1) {
+    return dependency;
+  }
 
   return dependency.slice(exclamationLocation + 1);
 }
