@@ -15,7 +15,8 @@ let resolve;
 let amdLookup;
 const stylusLookup = require("stylus-lookup");
 const sassLookup = require("sass-lookup");
-let ts;
+let tsLazy;
+const getTs = () => (tsLazy = tsLazy || require("typescript"));
 
 let resolveDependencyPath;
 const appModulePath = require("app-module-path");
@@ -125,10 +126,6 @@ module.exports._getJSType = function (options = {}) {
 };
 
 function getCompilerOptionsFromTsConfig(tsConfig) {
-  if (!ts) {
-    ts = require("typescript");
-  }
-
   let compilerOptions = {};
 
   debug("given typescript config: ", tsConfig);
@@ -138,6 +135,7 @@ function getCompilerOptionsFromTsConfig(tsConfig) {
   } else if (typeof tsConfig === "string") {
     debug("string tsconfig given, parsing");
 
+    const ts = getTs();
     try {
       const tsParsedConfig = ts.readJsonConfigFile(tsConfig, ts.sys.readFile);
       compilerOptions = ts.parseJsonSourceFileConfigFileContent(
@@ -253,7 +251,8 @@ function tsLookup({
   let compilerOptions =
     tsCompilerOptions || getCompilerOptionsFromTsConfig(tsConfig);
 
-  const host = (ts = ts || require("typescript")).createCompilerHost({});
+  const ts = getTs();
+  const host = ts.createCompilerHost({});
   debug("with options: ", compilerOptions);
 
   const namedModule = ts.resolveModuleName(
