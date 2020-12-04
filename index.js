@@ -253,11 +253,6 @@ function tsLookup({
   let compilerOptions =
     tsCompilerOptions || getCompilerOptionsFromTsConfig(tsConfig);
 
-  // Preserve for backcompat. Consider removing this as a breaking change.
-  if (!compilerOptions.module) {
-    compilerOptions.module = ts.ModuleKind.AMD;
-  }
-
   const host = (ts = ts || require("typescript")).createCompilerHost({});
   debug("with options: ", compilerOptions);
 
